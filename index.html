@@ -48,6 +48,17 @@
 
     <div id="result"></div>
 
+    <hr>
+        <h2>Today's Log</h2>
+
+        <label>Food Calories Eaten (kcal)</label>
+        <input type="number" id="foodCal" value="0" oninput="updateLedger()">
+
+        <label>Activity Calories Burned (from Apple/Mi Fitness)</label>
+        <input type="number" id="burnCal" value="0" oninput="updateLedger()">
+
+        <div id="ledger" style="margin-top: 16px; padding: 12px; background: #e8f5e9; border-radius: 8px;"></div>
+
     <script>
         function calculate() {
     // 1. Read values from the form
@@ -78,7 +89,52 @@
         <p><strong>Your TDEE:</strong> ${tdee.toFixed(0)} kcal/day</p>
         <p><strong>Daily Calorie Target:</strong> ${target.toFixed(0)} kcal/day</p>
     `;
+    
+    dailyTarget = target;
+    updateLedger();
 }
+        let dailyTarget = 0;
+
+// We need to remember the target so the ledger can use it
+// Modify the calculate() function's ending to store it
+// (see below)
+
+function updateLedger() {
+    const food = parseFloat(document.getElementById('foodCal').value) || 0;
+    const burn = parseFloat(document.getElementById('burnCal').value) || 0;
+    const remaining = dailyTarget - food + burn;
+    document.getElementById('ledger').innerHTML = `
+        <p><strong>Daily Target:</strong> ${dailyTarget.toFixed(0)} kcal</p>
+        <p><strong>Eaten:</strong> ${food.toFixed(0)} kcal</p>
+        <p><strong>Burned:</strong> ${burn.toFixed(0)} kcal</p>
+        <p><strong>Remaining Today:</strong> ${remaining.toFixed(0)} kcal</p>
+    `;
+    saveData();
+}
+
+        function saveData() {
+    const data = {
+        food: document.getElementById('foodCal').value,
+        burn: document.getElementById('burnCal').value,
+        target: dailyTarget,
+        date: new Date().toDateString()
+    };
+    localStorage.setItem('calorieLog', JSON.stringify(data));
+}
+
+function loadData() {
+    const saved = localStorage.getItem('calorieLog');
+    if (!saved) return;
+    const data = JSON.parse(saved);
+    // Only load if it's from today
+    if (data.date === new Date().toDateString()) {
+        document.getElementById('foodCal').value = data.food;
+        document.getElementById('burnCal').value = data.burn;
+        dailyTarget = data.target || 0;
+        updateLedger();
+    }
+}
+        loadData();
     </script>
 </body>
 </html>
