@@ -1,34 +1,42 @@
 export default async function handler(req, res) {
-    // 1. Add CORS headers so your browser allows the request
+    // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    // 2. Handle the browser's preflight check
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Only POST allowed' });
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Only POST allowed' });
-    }
-
-    const { image } = req.body;
-    if (!image) {
-        return res.status(400).json({ error: 'No image provided' });
+    const { image, text } = req.body;
+    if (!image && !text) {
+        return res.status(400).json({ error: 'No image or text provided' });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: 'API key not configured' });
-    }
+    if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
 
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+    // Prepare the prompt and content parts
+    let prompt = "";
+    let parts = [];
 
-    const prompt = `Analyze this food image. Return ONLY a JSON object, no other text, in this format:
+    if (image) {
+        prompt = `Analyze this food image. Return ONLY a JSON object, no other text, in this format:
 {"food": "name of food", "calories": estimated_calories_number}
 If there are multiple foods, sum up the calories and list the main food name.
 If you cannot identify food, return {"food": "unknown", "calories": 0}.`;
+        
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+        parts = [
+            { text: prompt },
+            { inline_data: { mime_type: 'image/jpeg', data: base64Data } }
+        ];
+    } else {
+        prompt = `Estimate the calories for this food description: "${text}". Return ONLY a JSON object, no other text, in this format:
+{"food": "name of food", "calories": estimated_calories_number}
+If you cannot estimate, return {"food": "unknown", "calories": 0}.`;
+        
+        parts = [{ text: prompt }];
+    }
 
     try {
         const response = await fetch(
@@ -37,17 +45,7 @@ If you cannot identify food, return {"food": "unknown", "calories": 0}.`;
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: prompt },
-                            {
-                                inline_data: {
-                                    mime_type: 'image/jpeg',
-                                    data: base64Data
-                                }
-                            }
-                        ]
-                    }]
+                    contents: [{ parts: parts }]
                 })
             }
         );
@@ -58,8 +56,8 @@ If you cannot identify food, return {"food": "unknown", "calories": 0}.`;
             return res.status(500).json({ error: 'Gemini API error', details: data });
         }
 
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         const result = jsonMatch ? JSON.parse(jsonMatch[0]) : { food: 'unknown', calories: 0 };
 
         res.status(200).json(result);
