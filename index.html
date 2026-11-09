@@ -151,9 +151,6 @@
 
             <div class="card">
                 <h2>AI Food Tracker</h2>
-                <p style="text-align: center; font-size: 12px; color: #665b75; margin-top: -10px; margin-bottom: 10px;">
-                    API Requests Today: <strong id="api-count">-</strong>
-                </p>
                 
                 <label>Search by Text</label>
                 <div style="display: flex; gap: 8px; margin-bottom: 16px;">
@@ -215,9 +212,9 @@
 
     <!-- Bottom Navigation Menu -->
     <div class="bottom-nav">
-        <button class="nav-btn active" onclick="switchTab('today', this)"><span>📝</span>Today</button>
-        <button class="nav-btn" onclick="switchTab('history', this)"><span>📊</span>History</button>
-        <button class="nav-btn" onclick="switchTab('profile', this)"><span>👤</span>Profile</button>
+        <button class="nav-btn active" onclick="switchTab('today', this)">Today</button>
+        <button class="nav-btn" onclick="switchTab('history', this)">History</button>
+        <button class="nav-btn" onclick="switchTab('profile', this)">Profile</button>
     </div>
 
     <script>
@@ -402,14 +399,6 @@
 
         function handleAIResponse(data) {
             const resultDiv = document.getElementById('aiResult');
-            const countDisplay = document.getElementById('api-count');
-
-            // Update the counter if the backend sent it
-            if (data.usedToday !== undefined) {
-                // Save the new highest count to the browser's memory
-                localStorage.setItem('apiCountToday', data.usedToday);
-                countDisplay.innerText = data.usedToday;
-            }
 
             if (data.error) {
                 resultDiv.innerHTML = `<p style="color:red;"><strong>Error:</strong> ${data.error}</p>`;
@@ -423,12 +412,6 @@
                 `;
             } else {
                 resultDiv.innerHTML = '<p>Could not recognize food. Try again.</p>';
-            }
-
-            if (data.usedToday !== undefined) {
-                localStorage.setItem('apiCountToday', data.usedToday);
-                localStorage.setItem('apiCountDate', getTodayKey());
-                countDisplay.innerText = data.usedToday;
             }
         }
 
@@ -465,7 +448,7 @@
             foodInput.value = (parseFloat(foodInput.value) || 0) + calories;
             updateLedger();
             
-            document.getElementById('aiResult').innerHTML = '<p style="color:green;">✅ Added to today\'s log!</p>';
+            document.getElementById('aiResult').innerHTML = '<p style="color:green;">Added to today\'s log!</p>';
             document.getElementById('photoInput').value = ''; 
             document.getElementById('textInput').value = '';  
         }
@@ -473,20 +456,6 @@
         // --- INIT ---
         loadProfile();
         loadData();
-
-        // Load the saved API count for TODAY only
-        const todayKey = getTodayKey();
-        const savedCountDate = localStorage.getItem('apiCountDate');
-        const savedCount = localStorage.getItem('apiCountToday');
-
-        if (savedCount && savedCountDate === todayKey) {
-            document.getElementById('api-count').innerText = savedCount;
-        } else {
-            // New day! Reset the count
-            localStorage.setItem('apiCountDate', todayKey);
-            localStorage.setItem('apiCountToday', 0);
-            document.getElementById('api-count').innerText = '0';
-        }
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
