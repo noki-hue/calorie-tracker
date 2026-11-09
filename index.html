@@ -150,10 +150,18 @@
             </div>
 
             <div class="card">
-                <h2>AI Food Scan</h2>
-                <!-- FIXED: Removed capture="environment" so gallery is accessible -->
+                <h2>AI Food Tracker</h2>
+                
+                <label>Search by Text</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <input type="text" id="textInput" placeholder="e.g., 2 slices of pizza" style="margin-top: 0;">
+                    <button class="primary-btn" style="width: auto; margin-top: 0; padding: 0 16px;" onclick="recognizeText()">Ask</button>
+                </div>
+
+                <label>Or Scan a Photo</label>
                 <input type="file" accept="image/*" id="photoInput" style="margin-bottom: 10px;">
                 <button class="primary-btn" onclick="recognizeFood()">Scan Photo</button>
+                
                 <div id="aiResult" style="margin-top: 12px; font-size: 14px; text-align: center;"></div>
             </div>
         </div>
@@ -204,9 +212,9 @@
 
     <!-- Bottom Navigation Menu -->
     <div class="bottom-nav">
-        <button class="nav-btn active" onclick="switchTab('today', this)">Today</button>
-        <button class="nav-btn" onclick="switchTab('history', this)">History</button>
-        <button class="nav-btn" onclick="switchTab('profile', this)">Profile</button>
+        <button class="nav-btn active" onclick="switchTab('today', this)"><span>📝</span>Today</button>
+        <button class="nav-btn" onclick="switchTab('history', this)"><span>📊</span>History</button>
+        <button class="nav-btn" onclick="switchTab('profile', this)"><span>👤</span>Profile</button>
     </div>
 
     <script>
@@ -339,7 +347,7 @@
             }).join('');
         }
 
-        // --- AI IMAGE RECOGNITION ---
+        // --- AI IMAGE & TEXT RECOGNITION ---
         async function recognizeFood() {
             const input = document.getElementById('photoInput');
             const resultDiv = document.getElementById('aiResult');
@@ -359,24 +367,51 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ image: compressed })
                 });
-
-                const data = await response.json();
-
-                if (data.error) {
-                    resultDiv.innerHTML = `<p style="color:red;"><strong>Error:</strong> ${data.error}</p>`;
-                    return;
-                }
-
-                if (data.calories && data.calories > 0) {
-                    resultDiv.innerHTML = `
-                        <p><strong>${data.food}</strong><br>${data.calories} kcal</p>
-                        <button class="primary-btn" style="padding: 8px; margin-top: 8px;" onclick="applyCalories(${data.calories})">Add to Log</button>
-                    `;
-                } else {
-                    resultDiv.innerHTML = '<p>Could not recognize food. Try a clearer photo.</p>';
-                }
+                handleAIResponse(await response.json());
             } catch (error) {
                 resultDiv.innerHTML = `<p style="color:red;">Failed to connect to AI.</p>`;
+            }
+        }
+
+        async function recognizeText() {
+            const textInput = document.getElementById('textInput');
+            const text = textInput.value.trim();
+            const resultDiv = document.getElementById('aiResult');
+
+            if (!text) {
+                resultDiv.innerHTML = '<p>Please type a food description first.</p>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<p>Calculating... ⏳</p>';
+
+            try {
+                const response = await fetch('https://calorie-tracker-eta-three.vercel.app/api/recognize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                handleAIResponse(await response.json());
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color:red;">Failed to connect to AI.</p>`;
+            }
+        }
+
+        function handleAIResponse(data) {
+            const resultDiv = document.getElementById('aiResult');
+
+            if (data.error) {
+                resultDiv.innerHTML = `<p style="color:red;"><strong>Error:</strong> ${data.error}</p>`;
+                return;
+            }
+
+            if (data.calories && data.calories > 0) {
+                resultDiv.innerHTML = `
+                    <p><strong>${data.food}</strong><br>${data.calories} kcal</p>
+                    <button class="primary-btn" style="padding: 8px; margin-top: 8px;" onclick="applyCalories(${data.calories})">Add to Log</button>
+                `;
+            } else {
+                resultDiv.innerHTML = '<p>Could not recognize food. Try again.</p>';
             }
         }
 
@@ -412,8 +447,10 @@
             const foodInput = document.getElementById('foodCal');
             foodInput.value = (parseFloat(foodInput.value) || 0) + calories;
             updateLedger();
+            
             document.getElementById('aiResult').innerHTML = '<p style="color:green;">✅ Added to today\'s log!</p>';
-            document.getElementById('photoInput').value = ''; // clear input
+            document.getElementById('photoInput').value = ''; 
+            document.getElementById('textInput').value = '';  
         }
 
         // --- INIT ---
