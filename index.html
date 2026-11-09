@@ -175,8 +175,9 @@ function loadData() {
         } else {
             resultDiv.innerHTML = '<p>Could not recognize food. Try a clearer photo, or enter manually.</p>';
         }
-    } catch (error) {
-        resultDiv.innerHTML = '<p>Recognition failed. Check your connection and try again.</p>';
+        } catch (error) {
+        console.error("Fetch error:", error);
+        resultDiv.innerHTML = `<p>Recognition failed: ${error.message}</p>`;
     }
 }
 
