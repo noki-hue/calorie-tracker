@@ -1,4 +1,14 @@
 export default async function handler(req, res) {
+    // 1. Add CORS headers so your browser allows the request
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // 2. Handle the browser's preflight check
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Only POST allowed' });
     }
@@ -13,7 +23,6 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'API key not configured' });
     }
 
-    // Remove the data:image/...;base64, prefix from the base64 string
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
 
     const prompt = `Analyze this food image. Return ONLY a JSON object, no other text, in this format:
@@ -49,9 +58,7 @@ If you cannot identify food, return {"food": "unknown", "calories": 0}.`;
             return res.status(500).json({ error: 'Gemini API error', details: data });
         }
 
-        // Extract the text from Gemini's response
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        // Try to parse the JSON from the response (it may have markdown code fences)
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         const result = jsonMatch ? JSON.parse(jsonMatch[0]) : { food: 'unknown', calories: 0 };
 
