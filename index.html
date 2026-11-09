@@ -49,7 +49,36 @@
     <div id="result"></div>
 
     <script>
-        // We'll add the calculation code here in Part B
+        function calculate() {
+    // 1. Read values from the form
+    const gender = document.getElementById('gender').value;
+    const age = parseFloat(document.getElementById('age').value);
+    const height = parseFloat(document.getElementById('height').value);
+    const weight = parseFloat(document.getElementById('weight').value);
+    const activity = parseFloat(document.getElementById('activity').value);
+    const deficit = parseFloat(document.getElementById('deficit').value);
+
+    // 2. Calculate BMR using Mifflin-St Jeor
+    let bmr;
+    if (gender === 'male') {
+        bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+    } else {
+        bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+    }
+
+    // 3. Calculate TDEE
+    const tdee = bmr * activity;
+
+    // 4. Calculate daily calorie target
+    const target = tdee - deficit;
+
+    // 5. Show result
+    document.getElementById('result').innerHTML = `
+        <p><strong>Your BMR:</strong> ${bmr.toFixed(0)} kcal/day</p>
+        <p><strong>Your TDEE:</strong> ${tdee.toFixed(0)} kcal/day</p>
+        <p><strong>Daily Calorie Target:</strong> ${target.toFixed(0)} kcal/day</p>
+    `;
+}
     </script>
 </body>
 </html>
