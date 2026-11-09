@@ -166,6 +166,13 @@ function loadData() {
 
         const data = await response.json();
 
+        // If the backend sent an error, show it
+        if (data.error) {
+            resultDiv.innerHTML = `<p><strong>Backend Error:</strong> ${data.error}</p>`;
+            console.log("Full error details:", data.details);
+            return;
+        }
+
         if (data.calories && data.calories > 0) {
             resultDiv.innerHTML = `
                 <p><strong>Food:</strong> ${data.food}</p>
