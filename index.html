@@ -151,6 +151,9 @@
 
             <div class="card">
                 <h2>AI Food Tracker</h2>
+                <p style="text-align: center; font-size: 12px; color: #665b75; margin-top: -10px; margin-bottom: 10px;">
+                    API Requests Today: <strong id="api-count">-</strong>
+                </p>
                 
                 <label>Search by Text</label>
                 <div style="display: flex; gap: 8px; margin-bottom: 16px;">
@@ -399,6 +402,12 @@
 
         function handleAIResponse(data) {
             const resultDiv = document.getElementById('aiResult');
+            const countDisplay = document.getElementById('api-count');
+
+            // Update the counter if the backend sent it
+            if (data.usedToday !== undefined) {
+                countDisplay.innerText = data.usedToday;
+            }
 
             if (data.error) {
                 resultDiv.innerHTML = `<p style="color:red;"><strong>Error:</strong> ${data.error}</p>`;
