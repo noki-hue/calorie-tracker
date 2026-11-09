@@ -406,6 +406,8 @@
 
             // Update the counter if the backend sent it
             if (data.usedToday !== undefined) {
+                // Save the new highest count to the browser's memory
+                localStorage.setItem('apiCountToday', data.usedToday);
                 countDisplay.innerText = data.usedToday;
             }
 
@@ -421,6 +423,12 @@
                 `;
             } else {
                 resultDiv.innerHTML = '<p>Could not recognize food. Try again.</p>';
+            }
+
+            if (data.usedToday !== undefined) {
+                localStorage.setItem('apiCountToday', data.usedToday);
+                localStorage.setItem('apiCountDate', getTodayKey());
+                countDisplay.innerText = data.usedToday;
             }
         }
 
@@ -465,6 +473,20 @@
         // --- INIT ---
         loadProfile();
         loadData();
+
+        // Load the saved API count for TODAY only
+        const todayKey = getTodayKey();
+        const savedCountDate = localStorage.getItem('apiCountDate');
+        const savedCount = localStorage.getItem('apiCountToday');
+
+        if (savedCount && savedCountDate === todayKey) {
+            document.getElementById('api-count').innerText = savedCount;
+        } else {
+            // New day! Reset the count
+            localStorage.setItem('apiCountDate', todayKey);
+            localStorage.setItem('apiCountToday', 0);
+            document.getElementById('api-count').innerText = '0';
+        }
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
